@@ -8,9 +8,8 @@ var Endpoints = function (APIConfig) {
 
   Endpoint.prototype = {
     validateInput: function(params) {
-      var validators = this.body.input.validators;
-      validators.map(function (validator) {
-
+      _.each(params, function(param, value) {
+        return;
       });
     },
 
@@ -22,12 +21,13 @@ var Endpoints = function (APIConfig) {
     },
 
     performRequest: function() {
-
+      return;
     },
 
     go: function(params) {
+      var validators = _.pluck(this.body.input, "validators");
       /*Ultimate method that actually calls the API*/
-      if (this.body.input.validators.length) {
+      if (validators) {
         this.validateInput(params);
       }
 

@@ -38,4 +38,4 @@ module.exports = function (grunt) {
 
   grunt.registerTask("default", ["jshint", "browserify:dist"]);
   grunt.registerTask("dev", ["jshint", "browserify:dev"]);
-}
+};
