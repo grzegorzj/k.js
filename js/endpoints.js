@@ -4,7 +4,7 @@ var transforms = require("transforms.js");
 var Endpoints = function (APIURL) {
   var Endpoint = function (body) {
     this.body = body;
-  }
+  };
 
   Endpoint.prototype = {
     validateInput: function (params) {
@@ -38,7 +38,7 @@ var Endpoints = function (APIURL) {
         /*Replaces each %s with corresponding URI Component,
         in the order of occurence in 'input' array*/
         if(uri_components.length){
-          var url = url.replace(/\%s/g, "|%s|").split("|");
+          url = url.replace(/\%s/g, "|%s|").split("|");
           var i, j = 0;
 
           for (i; i <= url.length; i++) {
@@ -74,21 +74,20 @@ var Endpoints = function (APIURL) {
     },
 
     performRequest: function (method, endpoint, params) {
-      var url = config.api.url.protocol + "://" + config.api.url.root_url + ":"
-      + config.api.url.port + "/" + config.api.url.version + "/" + endpoint
-      + "/";
+      var url = config.api.url.protocol + "://" + config.api.url.root_url +
+        ":" + config.api.url.port + "/" + config.api.url.version + "/" +
+        endpoint + "/";
 
       return $.ajax({
-          headers: {
-              "Accept" : "application/json"
-          },
-          dataType: "json",
-          type: method,
-          url: url,
-          data: query,
-          contentType: "application/json; charset=utf-8"
-        });
-      }
+        headers: {
+            "Accept" : "application/json"
+        },
+        dataType: "json",
+        type: method,
+        url: url,
+        data: query,
+        contentType: "application/json; charset=utf-8"
+      });
     },
 
     go: function (method, endpoint, params) {
@@ -99,7 +98,7 @@ var Endpoints = function (APIURL) {
         /*Deferred*/
       }
     }
-  }
+  };
 
   /*Instantiate endpoints*/
   var endpoints = JSON.parse(EndpointsList);
@@ -108,6 +107,6 @@ var Endpoints = function (APIURL) {
       that[endpoint.alias] = new Endpoint(endpoint);
     }
   });
-}
+};
 
 module.exports = Endpoints;

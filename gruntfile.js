@@ -1,7 +1,7 @@
 module.exports = function (grunt) {
   grunt.initConfig({
     jshint: {
-      files: ["src/*.js", "gruntfile.js"],
+      files: ["js/*.js", "gruntfile.js"],
       options: {
         globals: {
           jQuery: true,
