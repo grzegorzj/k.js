@@ -1,0 +1,34 @@
+[
+  {
+    "url": "some_url",
+    "alias": "Get session",
+    "method": "get",
+    "input": [
+      {
+        "name": "username",
+        "validators": [
+          {
+            "name": "has",
+            "settings": {
+              "characters": ["@", "."]
+            }
+          }
+        ]
+      },
+
+      {
+        "name": "password",
+        "validators": [
+          {
+            "name": "required"
+          }
+        ],
+        "transforms": [
+          {
+            "name": "trim"
+          }
+        ]
+      }
+    ]
+  }
+]
