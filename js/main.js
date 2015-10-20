@@ -1,10 +1,7 @@
-var fs = require("fs");
-var endpointsList = fs.readFileSync(__dirname + "/endpoints.js", "utf8");
-
 global._ = require("underscore");
 global.$ = require("jquery");
 
-var Endpoints = require("./js/endpoints.js");
+var Endpoints = require("./endpoints.js");
 
 
 var Client = function (configuration) {

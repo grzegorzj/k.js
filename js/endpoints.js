@@ -1,5 +1,9 @@
-var validators = require("validators.js");
-var transforms = require("transforms.js");
+var validators = require("./validators.js");
+var transforms = require("./transforms.js");
+
+var fs = require("fs");
+var endpointsList = fs.readFileSync(__dirname + "/endpoints.example.json",
+ "utf8");
 
 var Endpoints = function (APIURL) {
   var Endpoint = function (body) {
@@ -74,9 +78,7 @@ var Endpoints = function (APIURL) {
     },
 
     performRequest: function (method, endpoint, params) {
-      var url = config.api.url.protocol + "://" + config.api.url.root_url +
-        ":" + config.api.url.port + "/" + config.api.url.version + "/" +
-        endpoint + "/";
+      var url = APIURL + endpoint + "/";
 
       return $.ajax({
         headers: {
@@ -101,7 +103,7 @@ var Endpoints = function (APIURL) {
   };
 
   /*Instantiate endpoints*/
-  var endpoints = JSON.parse(EndpointsList);
+  var endpoints = JSON.parse(endpointsList);
   _.each(endpoints, function(endpoint) {
     if(!that.hasOwnProperty(endpoint.alias)) {
       that[endpoint.alias] = new Endpoint(endpoint);
