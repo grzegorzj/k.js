@@ -1,3 +1,6 @@
+var underscore = require("underscore");
+var $ = require("jquery")(global);
+
 var validators = require("./validators.js");
 var transforms = require("./transforms.js");
 
@@ -103,6 +106,8 @@ var Endpoints = function (APIURL) {
   };
 
   /*Instantiate endpoints*/
+  var that = this;
+
   var endpoints = JSON.parse(endpointsList);
   _.each(endpoints, function(endpoint) {
     if(!that.hasOwnProperty(endpoint.alias)) {

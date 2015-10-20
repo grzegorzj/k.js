@@ -13,8 +13,7 @@ module.exports = function (grunt) {
     browserify: {
       dist: {
         files: {
-          "build/client.js": ["js/**.js"],
-          "example/example.build.js": ["example/"]
+          "build/client.js": ["js/**.js"]
         },
         options: {
           transform: ["brfs"]
@@ -23,7 +22,8 @@ module.exports = function (grunt) {
 
       dev: {
         files: {
-          "build/client.js": ["js/**.js"]
+          "build/client.js": ["js/**.js"],
+          "example/example.build.js": ["example/example.js", "js/**.js"]
         },
         options: {
           transform: ["brfs"],

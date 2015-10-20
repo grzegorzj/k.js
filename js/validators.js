@@ -2,4 +2,4 @@ var validators = {
 
 };
 
-module.exports = transforms;
+module.exports = validators;

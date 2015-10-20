@@ -1,8 +1,7 @@
-global._ = require("underscore");
-global.$ = require("jquery");
+var underscore = require("underscore");
+var jQuery = require("jquery")(global);
 
 var Endpoints = require("./endpoints.js");
-
 
 var Client = function (configuration) {
   this.endpoints = new Endpoints();
