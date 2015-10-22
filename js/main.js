@@ -1,5 +1,5 @@
 var underscore = require("underscore");
-var jQuery = require("jquery")(global);
+var $ = require("jquery");
 
 var Endpoints = require("./endpoints.js");
 

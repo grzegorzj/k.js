@@ -4,114 +4,113 @@ var Client = require("../js/main.js");
 
 global.dribbble = new Client("http://api.dribbble.com");
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../js/main.js":3}],2:[function(require,module,exports){
-(function (global){
-var underscore = require("underscore");
-var $ = require("jquery")(global);
+},{"../js/main.js":4}],2:[function(require,module,exports){
+var Endpoint = function (body) {
+  this.body = body;
+};
 
+Endpoint.prototype = {
+  validateInput: function (params) {
+    var that = this;
+    var input_validators;
+
+    _.each(params, function (param, value) {
+      if (that.body.input.hasOwnProperty(param)) {
+        input_validators = that.body.input[param].validators;
+        input_validators.map(function (inputValidator) {
+          validation = typeof validators[inputValidator.name] === "function" ?
+            validators[inputValidator.name](value, inputValidator.options) :
+            undefined;
+          if (validation !== true) {
+            console.log(validation ? validation :
+              "Validator " + inputValidator.name + " was not defined.");
+            return false;
+          }
+        });
+      } else {
+        /*Prune redundant parameter*/
+        delete params[param];
+      }
+    });
+  },
+
+  prepareRequest: function (params) {
+    var that = this;
+
+    var generateUrl = function (url, params) {
+      /*Replaces each %s with corresponding URI Component,
+      in the order of occurence in 'input' array*/
+      if(uri_components.length){
+        url = url.replace(/\%s/g, "|%s|").split("|");
+        var i, j = 0;
+
+        for (i; i <= url.length; i++) {
+          if ("%s" === url[i]) {
+            url[i] = encodeURIComponent(parameters[uri_components[j]]);
+            j++;
+          }
+        }
+
+        url = url.join("");
+      }
+      return url;
+    };
+
+    var uri_components = _.pluck(
+        _.where(that.body.input, {"type": "uri_component"}),
+        "name"
+      );
+
+    var request_keys = _.filter(that.body.input, function (item) {
+        return item.type != "uri_component";
+      });
+    request_keys =  _.pluck(request_keys, "name");
+
+    var request_data = _.extend({}, params);
+
+    return this.go(
+      this.body.method,
+      generateUrl(this.endpoint.url, uri_components, params),
+      request_data
+        );
+
+  },
+
+  performRequest: function (method, endpoint, params) {
+    var url = APIURL + endpoint + "/";
+
+    return $.ajax({
+      headers: {
+          "Accept" : "application/json"
+      },
+      dataType: "json",
+      type: method,
+      url: url,
+      data: query,
+      contentType: "application/json; charset=utf-8"
+    });
+  },
+
+  go: function (method, endpoint, params) {
+    if (this.validateInput(params, validators)) {
+      /*Ultimate method that actually calls the API*/
+      return this.performRequest(method, endponit, params);
+    } else {
+      /*Deferred*/
+    }
+  }
+};
+
+module.exports = Endpoint;
+},{}],3:[function(require,module,exports){
 var validators = require("./validators.js");
 var transforms = require("./transforms.js");
+var endpoint = require("./endpoint.js");
 
 
 var endpointsList = "[\r\n  {\r\n    \"url\": \"some_url\",\r\n    \"alias\": \"Get session\",\r\n    \"method\": \"get\",\r\n    \"input\": [\r\n      {\r\n        \"name\": \"username\",\r\n        \"validators\": [\r\n          {\r\n            \"name\": \"has\",\r\n            \"settings\": {\r\n              \"characters\": [\"@\", \".\"]\r\n            }\r\n          }\r\n        ]\r\n      },\r\n\r\n      {\r\n        \"name\": \"password\",\r\n        \"validators\": [\r\n          {\r\n            \"name\": \"required\"\r\n          }\r\n        ],\r\n        \"transforms\": [\r\n          {\r\n            \"name\": \"trim\"\r\n          }\r\n        ]\r\n      }\r\n    ]\r\n  }\r\n]";
 
-var Endpoints = function (APIURL) {
-  var Endpoint = function (body) {
-    this.body = body;
-  };
-
-  Endpoint.prototype = {
-    validateInput: function (params) {
-      var that = this;
-      var input_validators;
-
-      _.each(params, function (param, value) {
-        if (that.body.input.hasOwnProperty(param)) {
-          input_validators = that.body.input[param].validators;
-          input_validators.map(function (inputValidator) {
-            validation = typeof validators[inputValidator.name] === "function" ?
-              validators[inputValidator.name](value, inputValidator.options) :
-              undefined;
-            if (validation !== true) {
-              console.log(validation ? validation :
-                "Validator " + inputValidator.name + " was not defined.");
-              return false;
-            }
-          });
-        } else {
-          /*Prune redundant parameter*/
-          delete params[param];
-        }
-      });
-    },
-
-    prepareRequest: function (params) {
-      var that = this;
-
-      var generateUrl = function (url, params) {
-        /*Replaces each %s with corresponding URI Component,
-        in the order of occurence in 'input' array*/
-        if(uri_components.length){
-          url = url.replace(/\%s/g, "|%s|").split("|");
-          var i, j = 0;
-
-          for (i; i <= url.length; i++) {
-            if ("%s" === url[i]) {
-              url[i] = encodeURIComponent(parameters[uri_components[j]]);
-              j++;
-            }
-          }
-
-          url = url.join("");
-        }
-        return url;
-      };
-
-      var uri_components = _.pluck(
-          _.where(that.body.input, {"type": "uri_component"}),
-          "name"
-        );
-
-      var request_keys = _.filter(that.body.input, function (item) {
-          return item.type != "uri_component";
-        });
-      request_keys =  _.pluck(request_keys, "name");
-
-      var request_data = _.extend({}, params);
-
-      return this.go(
-        this.body.method,
-        generateUrl(this.endpoint.url, uri_components, params),
-        request_data
-          );
-
-    },
-
-    performRequest: function (method, endpoint, params) {
-      var url = APIURL + endpoint + "/";
-
-      return $.ajax({
-        headers: {
-            "Accept" : "application/json"
-        },
-        dataType: "json",
-        type: method,
-        url: url,
-        data: query,
-        contentType: "application/json; charset=utf-8"
-      });
-    },
-
-    go: function (method, endpoint, params) {
-      if (this.validateInput(params, validators)) {
-        /*Ultimate method that actually calls the API*/
-        return this.performRequest(method, endponit, params);
-      } else {
-        /*Deferred*/
-      }
-    }
-  };
-
+var Endpoints = function (APIURL, Endpoints) {
   /*Instantiate endpoints*/
   var that = this;
 
@@ -125,11 +124,9 @@ var Endpoints = function (APIURL) {
 
 module.exports = Endpoints;
 
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./transforms.js":4,"./validators.js":5,"jquery":6,"underscore":7}],3:[function(require,module,exports){
-(function (global){
+},{"./endpoint.js":2,"./transforms.js":5,"./validators.js":6}],4:[function(require,module,exports){
 var underscore = require("underscore");
-var jQuery = require("jquery")(global);
+var $ = require("jquery");
 
 var Endpoints = require("./endpoints.js");
 
@@ -161,20 +158,19 @@ Client.prototype = {
 };
 
 module.exports = Client;
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./endpoints.js":2,"jquery":6,"underscore":7}],4:[function(require,module,exports){
+},{"./endpoints.js":3,"jquery":7,"underscore":8}],5:[function(require,module,exports){
 var transforms = {
 
 };
 
 module.exports = transforms;
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 var validators = {
 
 };
 
 module.exports = validators;
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 /*!
  * jQuery JavaScript Library v2.1.4
  * http://jquery.com/
@@ -9386,7 +9382,7 @@ return jQuery;
 
 }));
 
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 // Underscore.js
 // (c) 2010 Jeremy Ashkenas, DocumentCloud Inc.
 // Underscore is freely distributable under the terms of the MIT license.
@@ -10092,4 +10088,4 @@ return jQuery;
 
 })();
 
-},{}]},{},[1,2,3,4,5]);
+},{}]},{},[1,3,4,5,6]);
