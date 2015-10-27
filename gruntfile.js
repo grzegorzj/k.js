@@ -5,7 +5,7 @@ module.exports = function (grunt) {
       options: {
         globals: {
           jQuery: true,
-          underscore: false
+          underscore: true
         }
       }
     },

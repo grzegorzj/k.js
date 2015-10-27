@@ -1,21 +1,28 @@
+var underscore = require("underscore");
+var $ = require("jquery");
+
 var validators = require("./validators.js");
 var transforms = require("./transforms.js");
-var endpoint = require("./endpoint.js");
+var Endpoint = require("./endpoint.js");
 
-var fs = require("fs");
-var endpointsList = fs.readFileSync(__dirname + "/endpoints.example.json",
- "utf8");
-
-var Endpoints = function (APIURL, Endpoints) {
+var Client = function (APIURL, endpointsList) {
   /*Instantiate endpoints*/
   var that = this;
+  this.endpoints = {};
 
   var endpoints = JSON.parse(endpointsList);
   _.each(endpoints, function(endpoint) {
+    /*Instantiate Endpoint object*/
+    that.endpoints[endpoint.alias] = new Endpoint(endpoint);
+    /*Create alias*/
     if(!that.hasOwnProperty(endpoint.alias)) {
-      that[endpoint.alias] = new Endpoint(endpoint);
+      that[endpoint.alias] = (function(that) {
+        return function () {
+          that.endpoints[endpoint.alias].go(arguments)
+        };
+      })(that);
     }
   });
 };
 
-module.exports = Endpoints;
+module.exports = Client;

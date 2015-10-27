@@ -1,10 +1,15 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
-var Client = require("../js/main.js");
 
-global.dribbble = new Client("http://api.dribbble.com");
+var api = "[\r\n  {\r\n    \"url\": \"some_url\",\r\n    \"description\": \"Get session\",\r\n    \"alias\": \"getSession\",\r\n    \"method\": \"get\",\r\n    \"input\": [\r\n      {\r\n        \"name\": \"username\",\r\n        \"validators\": [\r\n          {\r\n            \"name\": \"has\",\r\n            \"settings\": {\r\n              \"characters\": [\"@\", \".\"]\r\n            }\r\n          }\r\n        ]\r\n      },\r\n\r\n      {\r\n        \"name\": \"password\",\r\n        \"validators\": [\r\n          {\r\n            \"name\": \"required\"\r\n          }\r\n        ],\r\n        \"transforms\": [\r\n          {\r\n            \"name\": \"trim\"\r\n          }\r\n        ]\r\n      }\r\n    ]\r\n  }\r\n]"
+
+var Client = require("../js/endpoints.js");
+/*Here one can go with either AJAX request, or pre-bundled
+JSON*/
+
+global.dribbble = new Client("http://api.dribbble.com", api);
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../js/main.js":4}],2:[function(require,module,exports){
+},{"../js/endpoints.js":3}],2:[function(require,module,exports){
 var Endpoint = function (body) {
   this.body = body;
 };
@@ -14,6 +19,7 @@ Endpoint.prototype = {
     var that = this;
     var input_validators;
 
+    /*For each input, perform defined validations*/
     _.each(params, function (param, value) {
       if (that.body.input.hasOwnProperty(param)) {
         input_validators = that.body.input[param].validators;
@@ -91,8 +97,8 @@ Endpoint.prototype = {
     });
   },
 
-  go: function (method, endpoint, params) {
-    if (this.validateInput(params, validators)) {
+  go: function (params) {
+    if (this.validateInput(params)) {
       /*Ultimate method that actually calls the API*/
       return this.performRequest(method, endponit, params);
     } else {
@@ -103,74 +109,48 @@ Endpoint.prototype = {
 
 module.exports = Endpoint;
 },{}],3:[function(require,module,exports){
+var underscore = require("underscore");
+var $ = require("jquery");
+
 var validators = require("./validators.js");
 var transforms = require("./transforms.js");
-var endpoint = require("./endpoint.js");
+var Endpoint = require("./endpoint.js");
 
-
-var endpointsList = "[\r\n  {\r\n    \"url\": \"some_url\",\r\n    \"alias\": \"Get session\",\r\n    \"method\": \"get\",\r\n    \"input\": [\r\n      {\r\n        \"name\": \"username\",\r\n        \"validators\": [\r\n          {\r\n            \"name\": \"has\",\r\n            \"settings\": {\r\n              \"characters\": [\"@\", \".\"]\r\n            }\r\n          }\r\n        ]\r\n      },\r\n\r\n      {\r\n        \"name\": \"password\",\r\n        \"validators\": [\r\n          {\r\n            \"name\": \"required\"\r\n          }\r\n        ],\r\n        \"transforms\": [\r\n          {\r\n            \"name\": \"trim\"\r\n          }\r\n        ]\r\n      }\r\n    ]\r\n  }\r\n]";
-
-var Endpoints = function (APIURL, Endpoints) {
+var Client = function (APIURL, endpointsList) {
   /*Instantiate endpoints*/
   var that = this;
+  this.endpoints = {};
 
   var endpoints = JSON.parse(endpointsList);
   _.each(endpoints, function(endpoint) {
+    /*Instantiate Endpoint object*/
+    that.endpoints[endpoint.alias] = new Endpoint(endpoint);
+    /*Create alias*/
     if(!that.hasOwnProperty(endpoint.alias)) {
-      that[endpoint.alias] = new Endpoint(endpoint);
+      that[endpoint.alias] = (function(that) {
+        return function () {
+          that.endpoints[endpoint.alias].go(arguments)
+        };
+      })(that);
     }
   });
 };
 
-module.exports = Endpoints;
-
-},{"./endpoint.js":2,"./transforms.js":5,"./validators.js":6}],4:[function(require,module,exports){
-var underscore = require("underscore");
-var $ = require("jquery");
-
-var Endpoints = require("./endpoints.js");
-
-var Client = function (configuration) {
-  this.endpoints = new Endpoints();
-};
-
-Client.prototype = {
-
-  generateAliases: function () {
-
-    var Alias = function (endpoint, endpointsObj) {
-      return function(args) {
-        return endpointsObj[endpoint].prepareReq(args);
-      };
-    };
-
-    var endpointsObj = this.endpoints;
-    /*If namespace available, creates a shorthand reference to endpoint
-    call method*/
-    for (var property in this.endpoints) {
-      if (endpointsObj.hasOwnProperty(property) &&
-        "undefined" === typeof this[property]) {
-          this[property] = new Alias(property, endpointsObj);
-      }
-    }
-    return;
-  }
-};
-
 module.exports = Client;
-},{"./endpoints.js":3,"jquery":7,"underscore":8}],5:[function(require,module,exports){
+
+},{"./endpoint.js":2,"./transforms.js":4,"./validators.js":5,"jquery":6,"underscore":7}],4:[function(require,module,exports){
 var transforms = {
 
 };
 
 module.exports = transforms;
-},{}],6:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 var validators = {
 
 };
 
 module.exports = validators;
-},{}],7:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 /*!
  * jQuery JavaScript Library v2.1.4
  * http://jquery.com/
@@ -9382,7 +9362,7 @@ return jQuery;
 
 }));
 
-},{}],8:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 // Underscore.js
 // (c) 2010 Jeremy Ashkenas, DocumentCloud Inc.
 // Underscore is freely distributable under the terms of the MIT license.
@@ -10088,4 +10068,4 @@ return jQuery;
 
 })();
 
-},{}]},{},[1,3,4,5,6]);
+},{}]},{},[1,2,3,4,5]);

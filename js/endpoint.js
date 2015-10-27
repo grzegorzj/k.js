@@ -7,6 +7,7 @@ Endpoint.prototype = {
     var that = this;
     var input_validators;
 
+    /*For each input, perform defined validations*/
     _.each(params, function (param, value) {
       if (that.body.input.hasOwnProperty(param)) {
         input_validators = that.body.input[param].validators;
@@ -84,8 +85,8 @@ Endpoint.prototype = {
     });
   },
 
-  go: function (method, endpoint, params) {
-    if (this.validateInput(params, validators)) {
+  go: function (params) {
+    if (this.validateInput(params)) {
       /*Ultimate method that actually calls the API*/
       return this.performRequest(method, endponit, params);
     } else {

@@ -1,3 +1,8 @@
-var Client = require("../js/main.js");
+var fs = require("fs");
+var api = fs.readFileSync(__dirname + "/endpoints.example.json", "utf8")
 
-global.dribbble = new Client("http://api.dribbble.com");
+var Client = require("../js/endpoints.js");
+/*Here one can go with either AJAX request, or pre-bundled
+JSON*/
+
+global.dribbble = new Client("http://api.dribbble.com", api);

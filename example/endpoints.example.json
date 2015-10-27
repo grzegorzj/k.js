@@ -1,7 +1,8 @@
 [
   {
     "url": "some_url",
-    "alias": "Get session",
+    "description": "Get session",
+    "alias": "getSession",
     "method": "get",
     "input": [
       {
