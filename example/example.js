@@ -6,7 +6,9 @@ var Client = require("../js/endpoints.js");
 /*Here one can go with either AJAX request, or pre-bundled
 JSON*/
 global.dribbble = new Client("https://api.dribbble.com/v1/", api);
-dribbble.authenticate().done(function (response) {
+dribbble.authenticate({
+  "access_token": "12345"
+}).done(function (response) {
   console.log(response);
 }).fail(function (reason){
   console.log(reason);

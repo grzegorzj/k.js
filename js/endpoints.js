@@ -1,8 +1,6 @@
-var underscore = require("underscore");
+var underscore, _ = require("underscore");
 var $ = require("jquery");
 
-var validators = require("./validators.js");
-var transforms = require("./transforms.js");
 var Endpoint = require("./endpoint.js");
 
 var Client = function (APIURL, endpointsList) {

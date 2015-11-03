@@ -1,5 +1,8 @@
-var underscore = require("underscore");
+var underscore, _ = require("underscore");
 var $ = require("jquery");
+
+var validators = require("./validators.js");
+var transforms = require("./transforms.js");
 
 var Endpoint = function (body) {
   this.body = body;
@@ -20,7 +23,8 @@ Endpoint.prototype = {
 
       /*Check if the field(input) should be sent any further*/
       if (inputs.indexOf(key) > -1) {
-        input_validators = that.body.input[key].validators;
+        input_validators = _.findWhere(that.body.input, {"name": key}).validators;
+
         input_validators.map(function (inputValidator) {
           validation = typeof validators[inputValidator.name] === "function" ?
             validators[inputValidator.name](value, inputValidator.options) :
