@@ -1,15 +1,23 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
 
-var api = "[\r\n  {\r\n    \"url\": \"some_url\",\r\n    \"description\": \"Get session\",\r\n    \"alias\": \"getSession\",\r\n    \"method\": \"get\",\r\n    \"input\": [\r\n      {\r\n        \"name\": \"username\",\r\n        \"validators\": [\r\n          {\r\n            \"name\": \"has\",\r\n            \"settings\": {\r\n              \"characters\": [\"@\", \".\"]\r\n            }\r\n          }\r\n        ]\r\n      },\r\n\r\n      {\r\n        \"name\": \"password\",\r\n        \"validators\": [\r\n          {\r\n            \"name\": \"required\"\r\n          }\r\n        ],\r\n        \"transforms\": [\r\n          {\r\n            \"name\": \"trim\"\r\n          }\r\n        ]\r\n      }\r\n    ]\r\n  }\r\n]"
+var api = "[\r\n  {\r\n    \"url\": \"some_url\",\r\n    \"description\": \"Get session\",\r\n    \"alias\": \"authenticate\",\r\n    \"method\": \"get\",\r\n    \"input\": [\r\n      {\r\n        \"name\": \"access_token\",\r\n        \"validators\": [\r\n          {\r\n            \"name\": \"required\"\r\n          }\r\n        ],\r\n        \"transforms\": [\r\n          {\r\n            \"name\": \"trim\"\r\n          }\r\n        ]\r\n      }\r\n    ]\r\n  }\r\n]"
 
 var Client = require("../js/endpoints.js");
+
 /*Here one can go with either AJAX request, or pre-bundled
 JSON*/
-
-global.dribbble = new Client("http://api.dribbble.com", api);
+global.dribbble = new Client("https://api.dribbble.com/v1/", api);
+dribbble.authenticate().done(function (response) {
+  console.log(response);
+}).fail(function (reason){
+  console.log(reason);
+});
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"../js/endpoints.js":3}],2:[function(require,module,exports){
+var underscore = require("underscore");
+var $ = require("jquery");
+
 var Endpoint = function (body) {
   this.body = body;
 };
@@ -20,9 +28,16 @@ Endpoint.prototype = {
     var input_validators;
 
     /*For each input, perform defined validations*/
-    _.each(params, function (param, value) {
-      if (that.body.input.hasOwnProperty(param)) {
-        input_validators = that.body.input[param].validators;
+    _.each(params, function (param) {
+      /*Assumes one, we are iterating*/
+      var key = Object.keys(param)[0];
+      var value = param[key];
+
+      var inputs = _.pluck(that.body.input, "name");
+
+      /*Check if the field(input) should be sent any further*/
+      if (inputs.indexOf(key) > -1) {
+        input_validators = that.body.input[key].validators;
         input_validators.map(function (inputValidator) {
           validation = typeof validators[inputValidator.name] === "function" ?
             validators[inputValidator.name](value, inputValidator.options) :
@@ -30,14 +45,17 @@ Endpoint.prototype = {
           if (validation !== true) {
             console.log(validation ? validation :
               "Validator " + inputValidator.name + " was not defined.");
-            return false;
+            return validation ? validation : false;
           }
         });
       } else {
-        /*Prune redundant parameter*/
+        /*Prune redundant inputs*/
         delete params[param];
       }
     });
+
+    /*If no inputs are left after pruning redundant, validation fails*/
+    return Boolean(Object.keys(params).length);
   },
 
   prepareRequest: function (params) {
@@ -78,7 +96,7 @@ Endpoint.prototype = {
       this.body.method,
       generateUrl(this.endpoint.url, uri_components, params),
       request_data
-        );
+    );
 
   },
 
@@ -87,7 +105,7 @@ Endpoint.prototype = {
 
     return $.ajax({
       headers: {
-          "Accept" : "application/json"
+        "Accept" : "application/json"
       },
       dataType: "json",
       type: method,
@@ -100,15 +118,19 @@ Endpoint.prototype = {
   go: function (params) {
     if (this.validateInput(params)) {
       /*Ultimate method that actually calls the API*/
-      return this.performRequest(method, endponit, params);
+      return this.performRequest(
+        this.body.method,
+        this.body.url,
+        params
+      );
     } else {
-      /*Deferred*/
+      return $.Deferred().reject("Request was not performed due to failed validation.");
     }
   }
 };
 
 module.exports = Endpoint;
-},{}],3:[function(require,module,exports){
+},{"jquery":6,"underscore":7}],3:[function(require,module,exports){
 var underscore = require("underscore");
 var $ = require("jquery");
 
@@ -129,7 +151,7 @@ var Client = function (APIURL, endpointsList) {
     if(!that.hasOwnProperty(endpoint.alias)) {
       that[endpoint.alias] = (function(that) {
         return function () {
-          that.endpoints[endpoint.alias].go(arguments)
+          return that.endpoints[endpoint.alias].go(arguments);
         };
       })(that);
     }

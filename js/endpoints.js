@@ -18,7 +18,7 @@ var Client = function (APIURL, endpointsList) {
     if(!that.hasOwnProperty(endpoint.alias)) {
       that[endpoint.alias] = (function(that) {
         return function () {
-          that.endpoints[endpoint.alias].go(arguments)
+          return that.endpoints[endpoint.alias].go(arguments);
         };
       })(that);
     }

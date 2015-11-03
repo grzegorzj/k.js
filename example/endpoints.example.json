@@ -2,23 +2,11 @@
   {
     "url": "some_url",
     "description": "Get session",
-    "alias": "getSession",
+    "alias": "authenticate",
     "method": "get",
     "input": [
       {
-        "name": "username",
-        "validators": [
-          {
-            "name": "has",
-            "settings": {
-              "characters": ["@", "."]
-            }
-          }
-        ]
-      },
-
-      {
-        "name": "password",
+        "name": "access_token",
         "validators": [
           {
             "name": "required"
