@@ -1,7 +1,7 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
 
-var api = "[\r\n  {\r\n    \"url\": \"some_url\",\r\n    \"description\": \"Get session\",\r\n    \"alias\": \"authenticate\",\r\n    \"method\": \"get\",\r\n    \"input\": [\r\n      {\r\n        \"name\": \"access_token\",\r\n        \"validators\": [\r\n          {\r\n            \"name\": \"required\"\r\n          }\r\n        ],\r\n        \"transforms\": [\r\n          {\r\n            \"name\": \"trim\"\r\n          }\r\n        ]\r\n      }\r\n    ]\r\n  }\r\n]"
+var api = "[\r\n  {\r\n    \"url\": \"some_url\",\r\n    \"description\": \"Get session\",\r\n    \"alias\": \"authenticate\",\r\n    \"method\": \"get\",\r\n    \"input\": [\r\n      {\r\n        \"name\": \"access_token\",\r\n        \"validators\": [\r\n          {\r\n            \"name\": \"required\"\r\n          }\r\n        ]\r\n      }\r\n    ]\r\n  }\r\n]"
 
 var Client = require("../js/endpoints.js");
 var validators = require("./validators.example.js");
@@ -70,6 +70,7 @@ Endpoint.prototype = {
             validators[inputValidator.name](value, inputValidator.options) :
             undefined;
           if (validation !== true) {
+            /*TODO debug mode without error reporting*/
             console.error(validation ? validation :
               "Validator " + inputValidator.name + " was not defined.");
             return validation ? validation : false;
@@ -160,7 +161,7 @@ Endpoint.prototype = {
 
     /*TODO debug mode without validation*/
     var validation = this.validateInput(params);
-    if (validation) {
+    if (validation.result) {
       /*Ultimate method that actually calls the API*/
       return this.performRequest(
         this.body.method,
@@ -168,7 +169,7 @@ Endpoint.prototype = {
         validation.params
       );
     } else {
-      return $.Deferred().reject("Request was not performed due to failed validation.");
+      return $.Deferred().reject(new Error("Request was not performed due to failed validation."));
     }
   }
 };

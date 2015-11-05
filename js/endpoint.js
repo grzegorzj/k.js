@@ -28,6 +28,7 @@ Endpoint.prototype = {
             validators[inputValidator.name](value, inputValidator.options) :
             undefined;
           if (validation !== true) {
+            /*TODO debug mode without error reporting*/
             console.error(validation ? validation :
               "Validator " + inputValidator.name + " was not defined.");
             return validation ? validation : false;
@@ -118,7 +119,7 @@ Endpoint.prototype = {
 
     /*TODO debug mode without validation*/
     var validation = this.validateInput(params);
-    if (validation) {
+    if (validation.result) {
       /*Ultimate method that actually calls the API*/
       return this.performRequest(
         this.body.method,
@@ -126,7 +127,7 @@ Endpoint.prototype = {
         validation.params
       );
     } else {
-      return $.Deferred().reject("Request was not performed due to failed validation.");
+      return $.Deferred().reject(new Error("Request was not performed due to failed validation."));
     }
   }
 };
