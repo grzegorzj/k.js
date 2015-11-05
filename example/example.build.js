@@ -27,14 +27,25 @@ dribbble.authenticate({
 },{"../js/endpoints.js":4,"./validators.example.js":2}],2:[function(require,module,exports){
 var validators = {
   required: function(value) {
-    if (typeof value === "object") {
-      /*Passess if not null, even if empty object given*/
-      return value != null;
-    } else if (typeof value === "function") {
-      return true;
-    } else {
-      return Boolean(value.length);
-    }
+    var validation;
+
+    switch (typeof value) {
+      case "object":
+        validation = value != null;
+        break;
+      case "undefined":
+        validation = false;
+        break;
+      case "function":
+        validation = true;
+      case "string":
+        validation = Boolean(value.lenght);
+        break;
+      default:
+        validation = false;
+        break;
+     }
+     return validation;
   }
 };
 
@@ -43,9 +54,10 @@ module.exports = validators;
 var underscore, _ = require("underscore");
 var $ = require("jquery");
 
-var Endpoint = function (body, config) {
+var Endpoint = function (body, config, validators) {
   this.body = body;
   this.config = config;
+  this.validators = validators;
 };
 
 Endpoint.prototype = {
@@ -54,11 +66,7 @@ Endpoint.prototype = {
     var input_validators;
 
     /*For each input, perform defined validations*/
-    _.each(params, function (param) {
-      /*Assumes one, we are iterating*/
-      var key = Object.keys(param)[0];
-      var value = param[key];
-
+    _.each(params, function (value, key) {
       var inputs = _.pluck(that.body.input, "name");
 
       /*Check if the field(input) should be sent any further*/
@@ -66,8 +74,8 @@ Endpoint.prototype = {
         input_validators = _.findWhere(that.body.input, {"name": key}).validators;
 
         input_validators.map(function (inputValidator) {
-          validation = typeof validators[inputValidator.name] === "function" ?
-            validators[inputValidator.name](value, inputValidator.options) :
+          validation = typeof that.validators[inputValidator.name] === "function" ?
+            that.validators[inputValidator.name](value, inputValidator.options) :
             undefined;
           if (validation !== true) {
             /*TODO debug mode without error reporting*/
@@ -201,11 +209,12 @@ var Client = function (options) {
     that.registerValidator(validator, key);
   });
 
+
   /*Instantiate endpoints*/
   var endpoints = JSON.parse(this.endpointsList);
   _.each(endpoints, function(endpoint) {
     /*Instantiate Endpoint object*/
-    that.endpoints[endpoint.alias] = new Endpoint(endpoint, that.config);
+    that.endpoints[endpoint.alias] = new Endpoint(endpoint, that.config, that.registeredValidators);
     /*Create alias*/
     if(!that.hasOwnProperty(endpoint.alias)) {
       that[endpoint.alias] = (function(that) {

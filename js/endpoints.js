@@ -23,11 +23,12 @@ var Client = function (options) {
     that.registerValidator(validator, key);
   });
 
+
   /*Instantiate endpoints*/
   var endpoints = JSON.parse(this.endpointsList);
   _.each(endpoints, function(endpoint) {
     /*Instantiate Endpoint object*/
-    that.endpoints[endpoint.alias] = new Endpoint(endpoint, that.config);
+    that.endpoints[endpoint.alias] = new Endpoint(endpoint, that.config, that.registeredValidators);
     /*Create alias*/
     if(!that.hasOwnProperty(endpoint.alias)) {
       that[endpoint.alias] = (function(that) {
