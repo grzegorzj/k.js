@@ -4,27 +4,48 @@
 var api = "[\r\n  {\r\n    \"url\": \"some_url\",\r\n    \"description\": \"Get session\",\r\n    \"alias\": \"authenticate\",\r\n    \"method\": \"get\",\r\n    \"input\": [\r\n      {\r\n        \"name\": \"access_token\",\r\n        \"validators\": [\r\n          {\r\n            \"name\": \"required\"\r\n          }\r\n        ],\r\n        \"transforms\": [\r\n          {\r\n            \"name\": \"trim\"\r\n          }\r\n        ]\r\n      }\r\n    ]\r\n  }\r\n]"
 
 var Client = require("../js/endpoints.js");
+var validators = require("./validators.example.js");
 
 /*Here one can go with either AJAX request, or pre-bundled
-JSON*/
-global.dribbble = new Client("https://api.dribbble.com/v1/", api);
+JSON; in this example, JSON is required by fs (brfs plugin takes case of it being precompiled)*/
+global.dribbble = new Client({
+  config: {
+    api_url: "https://api.dribbble.com/v1/"
+  },
+  endpointsList: api,
+  validators: validators
+});
+
 dribbble.authenticate({
   "access_token": "12345"
 }).done(function (response) {
   console.log(response);
 }).fail(function (reason){
-  console.log(reason);
+  console.error(reason);
 });
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../js/endpoints.js":3}],2:[function(require,module,exports){
+},{"../js/endpoints.js":4,"./validators.example.js":2}],2:[function(require,module,exports){
+var validators = {
+  required: function(value) {
+    if (typeof value === "object") {
+      /*Passess if not null, even if empty object given*/
+      return value != null;
+    } else if (typeof value === "function") {
+      return true;
+    } else {
+      return Boolean(value.length);
+    }
+  }
+};
+
+module.exports = validators;
+},{}],3:[function(require,module,exports){
 var underscore, _ = require("underscore");
 var $ = require("jquery");
 
-var validators = require("./validators.js");
-var transforms = require("./transforms.js");
-
-var Endpoint = function (body) {
+var Endpoint = function (body, config) {
   this.body = body;
+  this.config = config;
 };
 
 Endpoint.prototype = {
@@ -49,23 +70,29 @@ Endpoint.prototype = {
             validators[inputValidator.name](value, inputValidator.options) :
             undefined;
           if (validation !== true) {
-            console.log(validation ? validation :
+            console.error(validation ? validation :
               "Validator " + inputValidator.name + " was not defined.");
             return validation ? validation : false;
           }
         });
       } else {
         /*Prune redundant inputs*/
-        delete params[param];
+        delete params[key];
       }
     });
 
     /*If no inputs are left after pruning redundant, validation fails*/
-    return Boolean(Object.keys(params).length);
+    return {
+      result: Boolean(Object.keys(params).length),
+      params: params
+    };
   },
 
   prepareRequest: function (params) {
     var that = this;
+
+    /*This method generates URL (includes URI components) and passes prepared data
+    to go method*/
 
     var generateUrl = function (url, params) {
       /*Replaces each %s with corresponding URI Component,
@@ -107,7 +134,13 @@ Endpoint.prototype = {
   },
 
   performRequest: function (method, endpoint, params) {
-    var url = APIURL + endpoint + "/";
+    var url = [this.config.api_url, endpoint, "/"].join("");
+
+    method = method.toUpperCase();
+
+    if (method !== "GET") {
+      params = JSON.stringify(params);
+    }
 
     return $.ajax({
       headers: {
@@ -116,18 +149,23 @@ Endpoint.prototype = {
       dataType: "json",
       type: method,
       url: url,
-      data: query,
+      data: params,
       contentType: "application/json; charset=utf-8"
     });
   },
 
   go: function (params) {
-    if (this.validateInput(params)) {
+    /*This method runs the validation,
+    and if is sucessful, performs the request*/
+
+    /*TODO debug mode without validation*/
+    var validation = this.validateInput(params);
+    if (validation) {
       /*Ultimate method that actually calls the API*/
       return this.performRequest(
         this.body.method,
         this.body.url,
-        params
+        validation.params
       );
     } else {
       return $.Deferred().reject("Request was not performed due to failed validation.");
@@ -136,47 +174,63 @@ Endpoint.prototype = {
 };
 
 module.exports = Endpoint;
-},{"./transforms.js":4,"./validators.js":5,"jquery":6,"underscore":7}],3:[function(require,module,exports){
+},{"jquery":5,"underscore":6}],4:[function(require,module,exports){
 var underscore, _ = require("underscore");
 var $ = require("jquery");
 
 var Endpoint = require("./endpoint.js");
 
-var Client = function (APIURL, endpointsList) {
-  /*Instantiate endpoints*/
+var Client = function (options) {
+  /*
+  {
+    config: {}.
+    endpointsList: [],
+    validators: []
+  }
+  */
+
   var that = this;
   this.endpoints = {};
 
-  var endpoints = JSON.parse(endpointsList);
+  /*Take options*/
+  $.extend(this, options);
+
+  /*Register validators*/
+  _.each(this.validators, function (validator, key) {
+    that.registerValidator(validator, key);
+  });
+
+  /*Instantiate endpoints*/
+  var endpoints = JSON.parse(this.endpointsList);
   _.each(endpoints, function(endpoint) {
     /*Instantiate Endpoint object*/
-    that.endpoints[endpoint.alias] = new Endpoint(endpoint);
+    that.endpoints[endpoint.alias] = new Endpoint(endpoint, that.config);
     /*Create alias*/
     if(!that.hasOwnProperty(endpoint.alias)) {
       that[endpoint.alias] = (function(that) {
-        return function () {
-          return that.endpoints[endpoint.alias].go(arguments);
+        return function (params) {
+          return that.endpoints[endpoint.alias].go(params);
         };
       })(that);
     }
   });
 };
 
+Client.prototype = {
+  registeredValidators: {},
+
+  registerValidator: function (validator, name) {
+    if(typeof validator !== "function") {
+      console.error("Argument passed as a validator must be a function!");
+    }
+
+    this.registeredValidators[name] = validator;
+  }
+};
+
 module.exports = Client;
 
-},{"./endpoint.js":2,"jquery":6,"underscore":7}],4:[function(require,module,exports){
-var transforms = {
-
-};
-
-module.exports = transforms;
-},{}],5:[function(require,module,exports){
-var validators = {
-
-};
-
-module.exports = validators;
-},{}],6:[function(require,module,exports){
+},{"./endpoint.js":3,"jquery":5,"underscore":6}],5:[function(require,module,exports){
 /*!
  * jQuery JavaScript Library v2.1.4
  * http://jquery.com/
@@ -9388,7 +9442,7 @@ return jQuery;
 
 }));
 
-},{}],7:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 //     Underscore.js 1.8.3
 //     http://underscorejs.org
 //     (c) 2009-2015 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -10938,4 +10992,4 @@ return jQuery;
   }
 }.call(this));
 
-},{}]},{},[1,2,3,4,5]);
+},{}]},{},[1,3,4]);

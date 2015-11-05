@@ -1,11 +1,9 @@
 var underscore, _ = require("underscore");
 var $ = require("jquery");
 
-var validators = require("./validators.js");
-var transforms = require("./transforms.js");
-
-var Endpoint = function (body) {
+var Endpoint = function (body, config) {
   this.body = body;
+  this.config = config;
 };
 
 Endpoint.prototype = {
@@ -30,23 +28,29 @@ Endpoint.prototype = {
             validators[inputValidator.name](value, inputValidator.options) :
             undefined;
           if (validation !== true) {
-            console.log(validation ? validation :
+            console.error(validation ? validation :
               "Validator " + inputValidator.name + " was not defined.");
             return validation ? validation : false;
           }
         });
       } else {
         /*Prune redundant inputs*/
-        delete params[param];
+        delete params[key];
       }
     });
 
     /*If no inputs are left after pruning redundant, validation fails*/
-    return Boolean(Object.keys(params).length);
+    return {
+      result: Boolean(Object.keys(params).length),
+      params: params
+    };
   },
 
   prepareRequest: function (params) {
     var that = this;
+
+    /*This method generates URL (includes URI components) and passes prepared data
+    to go method*/
 
     var generateUrl = function (url, params) {
       /*Replaces each %s with corresponding URI Component,
@@ -88,7 +92,13 @@ Endpoint.prototype = {
   },
 
   performRequest: function (method, endpoint, params) {
-    var url = APIURL + endpoint + "/";
+    var url = [this.config.api_url, endpoint, "/"].join("");
+
+    method = method.toUpperCase();
+
+    if (method !== "GET") {
+      params = JSON.stringify(params);
+    }
 
     return $.ajax({
       headers: {
@@ -97,18 +107,23 @@ Endpoint.prototype = {
       dataType: "json",
       type: method,
       url: url,
-      data: query,
+      data: params,
       contentType: "application/json; charset=utf-8"
     });
   },
 
   go: function (params) {
-    if (this.validateInput(params)) {
+    /*This method runs the validation,
+    and if is sucessful, performs the request*/
+
+    /*TODO debug mode without validation*/
+    var validation = this.validateInput(params);
+    if (validation) {
       /*Ultimate method that actually calls the API*/
       return this.performRequest(
         this.body.method,
         this.body.url,
-        params
+        validation.params
       );
     } else {
       return $.Deferred().reject("Request was not performed due to failed validation.");
