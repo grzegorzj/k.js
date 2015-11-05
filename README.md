@@ -18,9 +18,3 @@ var client = new Client({
 ```
 
 Where Client is imported *endpoints.js*, endpointsList is a list of endpoints, and validators (optional) is a singleton object with validator methods (see below). Example provided in /example/example.js.
-
-## APIs
-
-### Validators
-
-To s
